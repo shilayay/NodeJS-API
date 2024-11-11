@@ -1,22 +1,20 @@
-const users=[
+const users = [
     {
-        id:1,
-        name:'johnson',
-        age:13
+        id: 1,
+        name: 'John Doe',
+        age: 25,
     },
     {
-        id:2,
-        name:'Jones',
-        age:12,
-
-    },
-   
+        id: 2,
+        name: 'Jane Doe',
+        age: 24,
+    }
 ];
-const getUser= (id)=>{
+const getUser = (id) => {
     return users[id];
 }
 
 module.exports = {
-    users,
-    getUser,
+    users: users,
+    getUser: getUser
 };

@@ -1,62 +1,54 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const routes = require('./routes');
+const connectDB =require('./lib/connect');
+const cookieParser = require('cookie-parser');
+
+const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(routes);
 
-const users =[
-  {id:1, name: 'Alice'},
-  {id:2, name: 'Bob'},
-  {id:3, name: 'Charlie'},
-];
-app.get('/users', (req, res)=> {
-  return res.json(users);
-})
-app.post('/add-user',(req,res)=>{
-  const {name} = req.body;
-  const userFound=users.find((user)=>user.name.includes(name));
-  if(userFound){
-    return res.status(400).json({error:'name already exists'});
-  }
-
-  if(!name ){
-    return res.status(400).json({error:'name required'});
-  }
-  const newUser={
-    id: users.length+1,
-    name,
-  }
-  users.push(newUser);
-  return res.status(201).json(users);
+app.listen(3000, () => {
+    connectDB();
+    console.log('Server is running on http://localhost:3000');
 });
-app.listen(3000,()=>{
-    console.log("server is running on LH:3000");
-})
 
 
-// const user= require('./users')
-// console.log(user.users[0]);
-// console.log(user.getUser(1));
+//update + delete user (homework)
+
+//update user
 
 
-// const fs= require('fs');
-// const path = require ('path');
-// const http = require ('http');
+// const existingUser = users.find(user => user.name === name);
+//   if (existingUser) {
+//     return res.status(400).json({ error: 'name already exists' });
+//   }
+//   if (users.find(user => user.name === name)) {
+//     return res.status(400).json({ error: 'name already exists' });
+//   }
 
-// // http.createServer((req,res)=>{
-// //     res.writeHead(200,{'Content-Type': 'text/plain'});
-// //     res.end('Hello world');
-// // }).listen(3000);
 
 
-// const filePath= path.join(__dirname,'hello text');
-// console.log(filePath);
 
-// function createFile(){
-//     fs.writeFileSync('hello.txt', "hello, World");
-// }
+// // add delete 
 
-// function readFile(){
-//     const data =fs.readFileSync('hello.txt', 'utf8')
-//     console.log(data);
-// }
-// //readFile();
+// app.post('/add-user', (req,res) =>{
+//   const {name} = req.body;
+//   if(!name){
+//     return res.status(400).json({error: 'name is required'});
+//   }
+//   const exist = users.find(user => user.name.includes(name));
+//   if(exist){
+//     return res.status(400).json({error: 'name already exist'});
+//   }
+
+//   const newUser = {
+//     id: users.length+1,
+//     name
+//   };
+
+//   users.push(newUser);
+//   return(res.status(201).json(users));
+
+// });
