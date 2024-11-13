@@ -1,14 +1,16 @@
 const { z } = require('zod');
 const { signUpSchema, signInSchema, userIdValidation, updateUserSchema } = require('../lib/validation/user');
-const User = require('../models/user')
+const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { setTokenCookie } = require('../lib/utils');
 
 const signUp = async (req, res) => {
-    console.log(req.body);
     try {
+        console.log(req.body);
         const { fullName, username, email, password } = signUpSchema.parse(req.body);
+        
+
         const usernameExists = await User.findOne({ username });
         if (usernameExists) {
             return res.status(400).json({ message: 'Username already exists' });
@@ -18,30 +20,31 @@ const signUp = async (req, res) => {
         if (emailExists) {
             return res.status(400).json({ message: 'Email already exists' });
         }
-
         const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({
+            fullName,
+            username,
+            email,
+            password: hashedPassword
+        });
 
-        const user = new User({ fullName, username, email, password: hashedPassword });
         const newUser = await user.save();
 
         if (!newUser) {
             return res.status(400).json({ message: 'Failed to create user' });
         }
-        setTokenCookie(res,newUser,process.env.JWT_SECRET);
 
+        setTokenCookie(res, newUser, process.env.JWT_SECRET);
 
-        console.log(req.body);
-        return res.status(201).json({ message: 'Created User Successfully' });
-    }
-    catch (error) {
+        return res.status(201).json({ message: 'User created successfully' });
+    } catch (error) {
         console.log(error);
-
         if (error instanceof z.ZodError) {
             return res.status(400).json({ message: error.errors[0].message });
         }
-        return res.status(500).json({ message: 'internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
-};
+}
 
 const signIn = async (req, res) => {
     try{
@@ -83,31 +86,33 @@ catch(error){
 
 const updateUser = async (req, res) => {
      try {
+        
+        const userId = userIdValidation.parse(req.params.userId);
+
         const { fullName, username, email, password } = updateUserSchema.parse(req.body);
 
-        const userId = userIdValidation.parse(req.params.userId);
 
         const userExists = await User.findById(userId);
         if (!userExists) {
             return res.status(404).json({ message: "User not found" });
         }
-
-        if (username && username === userExists.username) { // check if username is both provided and the same as the old one
-            return res.status(400).json({ message: 'Username is the same as the old one' });
+        const usernameExists = await User.findOne({ username });
+        if (username && username === userExists.username && username === usernameExists.username) { 
+            return res.status(400).json({ message: 'Username is the same as the old one or username is already used by another user' });
+        }
+        
+        const emailExists = await User.findOne({ email });
+        if (email && email === userExists.email && email === emailExists.email) { 
+            return res.status(400).json({ message: 'Email is the same as the old one or email is already used by another user' });
         }
 
-        if (email && email === userExists.email) { // check if email is both provided and the same as the old one
-            return res.status(400).json({ message: 'Email is the same as the old one' });
-        }
-
+        
         let hashedPassword;
-        if (password) { // check if password is provided in req 
-            hashedPassword = await bcrypt.hash(password, 10);
-            console.log(hashedPassword, userExists.password); // without changing logic to checkpw the hash and salt algorithm will change the
-            // hashed password even if it is the same one as the old one so hashedPassword === userExists.password wouldn't work (used in signIn).
-            if (await bcrypt.compare(password, userExists.password)) { // check if the new password is the same as the old one
+        if (password) {  
+            if (await bcrypt.compare(password, userExists.password)) { 
                 return res.status(400).json({ message: 'Password is the same as the last one entered' });
             }
+            hashedPassword = await bcrypt.hash(password, 10);
         }
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
